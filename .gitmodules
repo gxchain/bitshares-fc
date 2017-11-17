@@ -5,5 +5,5 @@
     path = vendor/secp256k1-zkp
     url = https://github.com/bitshares/secp256k1-zkp.git
 [submodule "vendor/websocketpp"]
-	path = vendor/websocketpp
-	url = https://github.com/gxchain/websocketpp.git
+    path = vendor/websocketpp
+    url = https://github.com/gxchain/websocketpp.git

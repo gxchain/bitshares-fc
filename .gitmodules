@@ -7,3 +7,4 @@
 [submodule "vendor/websocketpp"]
     path = vendor/websocketpp
     url = https://github.com/gxchain/websocketpp.git
+    branch = develop

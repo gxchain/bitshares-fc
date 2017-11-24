@@ -158,7 +158,7 @@ namespace fc { namespace http {
 
             virtual void send_message( const std::string& message )override
             {
-               idump((message));
+            //    idump((message));
                //std::cerr<<"send: "<<message<<"\n";
                auto ec = _ws_connection->send( message );
                FC_ASSERT( !ec, "websocket send failed: ${msg}", ("msg",ec.message() ) );
@@ -198,7 +198,7 @@ namespace fc { namespace http {
                     _server_thread.async( [&](){
                        auto current_con = _connections.find(hdl);
                        assert( current_con != _connections.end() );
-                       wdump(("server")(msg->get_payload()));
+                    //    wdump(("server")(msg->get_payload()));
                        //std::cerr<<"recv: "<<msg->get_payload()<<"\n";
                        auto payload = msg->get_payload();
                        std::shared_ptr<websocket_connection> con = current_con->second;
@@ -222,7 +222,7 @@ namespace fc { namespace http {
                        auto con = _server.get_con_from_hdl(hdl);
                        con->defer_http_response();
                        std::string request_body = con->get_request_body();
-                       wdump(("server")(request_body));
+                    //    wdump(("server")(request_body));
 
                        fc::async([current_con, request_body, con] {
                           std::string response = current_con->on_http(request_body);
@@ -243,7 +243,7 @@ namespace fc { namespace http {
                        }
                        else
                        {
-                            wlog( "unknown connection closed" );
+                            // wlog( "unknown connection closed" );
                        }
                        if( _connections.empty() && _closed )
                           _closed->set_value();
@@ -261,7 +261,7 @@ namespace fc { namespace http {
                           }
                           else
                           {
-                            wlog( "unknown connection failed" );
+                            // wlog( "unknown connection failed" );
                           }
                           if( _connections.empty() && _closed )
                              _closed->set_value();
@@ -346,7 +346,7 @@ namespace fc { namespace http {
                           _on_connection( current_con );
 
                           auto con = _server.get_con_from_hdl(hdl);
-                          wdump(("server")(con->get_request_body()));
+                        //   wdump(("server")(con->get_request_body()));
                           auto response = current_con->on_http( con->get_request_body() );
 
                           con->set_body( response );
@@ -427,7 +427,7 @@ namespace fc { namespace http {
                 _client.clear_access_channels( websocketpp::log::alevel::all );
                 _client.set_message_handler( [&]( connection_hdl hdl, message_ptr msg ){
                    _client_thread.async( [&](){
-                        wdump((msg->get_payload()));
+                        // wdump((msg->get_payload()));
                         //std::cerr<<"recv: "<<msg->get_payload()<<"\n";
                         auto received = msg->get_payload();
                         fc::async( [=](){
@@ -487,7 +487,7 @@ namespace fc { namespace http {
                 _client.clear_access_channels( websocketpp::log::alevel::all );
                 _client.set_message_handler( [&]( connection_hdl hdl, message_ptr msg ){
                    _client_thread.async( [&](){
-                        wdump((msg->get_payload()));
+                        // wdump((msg->get_payload()));
                       _connection->on_message( msg->get_payload() );
                    }).wait();
                 });
@@ -496,7 +496,7 @@ namespace fc { namespace http {
                    {
                       try {
                          _client_thread.async( [&](){
-                                 wlog(". ${p}", ("p",uint64_t(_connection.get())));
+                                //  wlog(". ${p}", ("p",uint64_t(_connection.get())));
                                  if( !_shutting_down && !_closed && _connection )
                                     _connection->closed();
                                  _connection.reset();
@@ -509,7 +509,7 @@ namespace fc { namespace http {
                    }
                 });
                 _client.set_fail_handler( [=]( connection_hdl hdl ){
-                   elog( "." );
+                //    elog( "." );
                    auto con = _client.get_con_from_hdl(hdl);
                    auto message = con->get_ec().message();
                    if( _connection )
@@ -558,7 +558,7 @@ namespace fc { namespace http {
             {
                if(_connection )
                {
-                  wlog(".");
+                //   wlog(".");
                   _shutting_down = true;
                   _connection->close(0, "client closed");
                   _closed->wait();

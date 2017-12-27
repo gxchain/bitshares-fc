@@ -112,7 +112,7 @@ class sha256
     namespace std
     {
         template<>
-  #ifdef linux
+  #ifdef __linux__
         struct hash<fc::sha256>
   #else
         struct std::hash<fc::sha256>

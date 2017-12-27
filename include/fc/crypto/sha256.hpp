@@ -112,7 +112,11 @@ class sha256
     namespace std
     {
         template<>
+  #ifdef linux
+        struct hash<fc::sha256>
+  #else
         struct std::hash<fc::sha256>
+  #endif
         {
            size_t operator()( const fc::sha256& s )const
            {

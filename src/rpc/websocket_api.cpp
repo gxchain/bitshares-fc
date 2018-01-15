@@ -109,6 +109,11 @@ std::string websocket_api_connection::on_message(
                   elog( "API call execution time limit exceeded. method: ${m} params: ${p} time: ${t}", ("m",call.method)("p",call.params)("t", end - start) );
                else if( end - start > fc::milliseconds( LOG_LONG_API_WARN_MS ) )
                   wlog( "API call execution time nearing limit. method: ${m} params: ${p} time: ${t}", ("m",call.method)("p",call.params)("t", end - start) );
+               else
+                  ilog("normal API call. method: ${m} "
+                      "params: ${p} time: ${t}",
+                      ("m", call.method)("p", call.params)("t", end - start));
+
 #endif
 
                if( call.id )

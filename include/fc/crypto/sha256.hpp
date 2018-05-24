@@ -107,48 +107,17 @@ class sha256
   uint64_t hash64(const char* buf, size_t len);    
 
 } // fc
-
-#if BOOST_VERSION >= 106500
-    namespace std
+namespace std
+{
+    template<>
+    struct hash<fc::sha256>
     {
-        template<>
-  #ifdef __linux__
-        struct hash<fc::sha256>
-  #else
-        struct std::hash<fc::sha256>
-  #endif
-        {
-           size_t operator()( const fc::sha256& s )const
-           {
-               return  *((size_t*)&s);
-           }
-        };
-    }
-#else
-    namespace std
-    {
-        template<>
-        struct hash<fc::sha256>
-        {
-           size_t operator()( const fc::sha256& s )const
-           {
-               return  *((size_t*)&s);
-           }
-        };
-    }
-
-    namespace boost
-    {
-        template<>
-        struct hash<fc::sha256>
-        {
-           size_t operator()( const fc::sha256& s )const
-           {
-               return  s._hash[3];//*((size_t*)&s);
-           }
-        };
-    }
-#endif
+       size_t operator()( const fc::sha256& s )const
+       {
+           return  *((size_t*)&s);
+       }
+    };
+}
 
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT_TYPENAME( fc::sha256 )

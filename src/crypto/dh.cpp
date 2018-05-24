@@ -69,8 +69,12 @@ namespace fc {
 
         ssl_bignum pk;
         BN_bin2bn( (unsigned char*)buf, s, pk );
-        shared_key.resize( DH_size(dh) ); 
-        DH_compute_key( (unsigned char*)&shared_key.front(), pk, dh );
+        int est_size = DH_size(dh);
+        shared_key.resize( est_size );
+        int actual_size = DH_compute_key( (unsigned char*)&shared_key.front(), pk, dh );
+        if ( actual_size < 0 ) return false;
+        if ( actual_size != est_size )
+           shared_key.resize( actual_size );
 
         return true;
    }

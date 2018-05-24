@@ -113,14 +113,21 @@ namespace fc {
       if( my )
       {
         // wlog( "calling quit() on ${n}",("n",my->name) );
-        quit(); // deletes `my`
+        quit();
       }
+
+      delete my;
    }
 
    thread& thread::current() {
      if( !current_thread() )
        current_thread() = new thread((thread_d*)0);
      return *current_thread();
+   }
+
+   void thread::cleanup() {
+     delete current_thread();
+     current_thread() = nullptr;
    }
 
    const string& thread::name()const
@@ -152,19 +159,18 @@ namespace fc {
   {
     //if quitting from a different thread, start quit task on thread.
     //If we have and know our attached boost thread, wait for it to finish, then return.
-    if( &current() != this )
+    if( !is_current() )
     {
+      auto t = my->boost_thread;
       async( [=](){quit();}, "thread::quit" );//.wait();
-      if( my->boost_thread )
+      if( t )
       {
         //wlog("destroying boost thread ${tid}",("tid",(uintptr_t)my->boost_thread->native_handle()));
-        my->boost_thread->join();
-        delete my;
-        my = nullptr;
+        t->join();
       }
       return;
     }
-
+    
     my->done = true;
     //      wlog( "${s}", ("s",name()) );
     // We are quiting from our own thread...

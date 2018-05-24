@@ -245,7 +245,8 @@ namespace fc {
   void remove_all( const path& p ) { boost::filesystem::remove_all(p); }
   void copy( const path& f, const path& t ) { 
      try {
-  	    boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t) ); 
+         boost::system::error_code ec;
+         boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t), ec );
      } catch ( boost::system::system_error& e ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
 	         ("srcfile",f)("dstfile",t)("reason",e.what() ) );

@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <typeinfo>
 #include <fc/exception/exception.hpp>
+#include <boost/core/typeinfo.hpp>
 
 namespace fc {
 
@@ -24,6 +25,9 @@ struct storage_ops;
 
 template<typename X, typename... Ts>
 struct position;
+
+template<int Pos, typename... Ts>
+struct type_at;
 
 template<typename... Ts>
 struct type_info;
@@ -151,6 +155,16 @@ struct position<X, T, Ts...> {
 };
 
 template<typename T, typename... Ts>
+struct type_at<0, T, Ts...> {
+   using type = T;
+};
+
+template<int Pos, typename T, typename... Ts>
+struct type_at<Pos, T, Ts...> {
+   using type = typename type_at<Pos - 1, Ts...>::type;
+};
+
+template<typename T, typename... Ts>
 struct type_info<T&, Ts...> {
     static const bool no_reference_types = false;
     static const bool no_duplicates = position<T, Ts...>::pos == -1 && type_info<Ts...>::no_duplicates;
@@ -181,8 +195,8 @@ class static_variant {
     static_assert(impl::type_info<Types...>::no_reference_types, "Reference types are not permitted in static_variant.");
     static_assert(impl::type_info<Types...>::no_duplicates, "static_variant type arguments contain duplicate types.");
 
+    alignas(Types...) char storage[impl::type_info<Types...>::size];
     int _tag;
-    char storage[impl::type_info<Types...>::size];
 
     template<typename X>
     void init(const X& x) {
@@ -325,15 +339,29 @@ public:
         return impl::storage_ops<0, Types...>::apply(_tag, storage, v);
     }
 
-    static int count() { return impl::type_info<Types...>::count; }
-    void set_which( int w ) {
-      FC_ASSERT( w < count() );
+    static uint32_t count() { return impl::type_info<Types...>::count; }
+    void set_which( uint32_t w ) {
+      FC_ASSERT( w < count()  );
       this->~static_variant();
-      _tag = w;
-      impl::storage_ops<0, Types...>::con(_tag, storage);
+      try {
+         _tag = w;
+         impl::storage_ops<0, Types...>::con(_tag, storage);
+      } catch ( ... ) { 
+         _tag = 0;
+         impl::storage_ops<0, Types...>::con(_tag, storage);
+      } 
     }
 
     int which() const {return _tag;}
+
+    template<typename X>
+    bool contains() const { return which() == tag<X>::value; }
+
+    template<typename X>
+    static constexpr int position() { return impl::position<X, Types...>::pos; }
+
+    template<int Pos, std::enable_if_t<Pos < impl::type_info<Types...>::size,int> = 1>
+    using type_at = typename impl::type_at<Pos, Types...>::type;
 };
 
 template<typename Result>
@@ -382,5 +410,5 @@ struct visitor {
       s.visit( to_static_variant(ar[1]) );
    }
 
-  template<typename... T> struct get_typename  { static const char* name()   { return typeid(static_variant<T...>).name();   } };
+  template<typename... T> struct get_typename { static const char* name()   { return BOOST_CORE_TYPEID(static_variant<T...>).name();   } };
 } // namespace fc

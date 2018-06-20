@@ -487,7 +487,7 @@ namespace fc { namespace http {
                 _client.clear_access_channels( websocketpp::log::alevel::all );
                 _client.set_message_handler( [&]( connection_hdl hdl, message_ptr msg ){
                    _client_thread.async( [&](){
-                        // wdump((msg->get_payload()));
+                      wdump((msg->get_payload()));
                       _connection->on_message( msg->get_payload() );
                    }).wait();
                 });

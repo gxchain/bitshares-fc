@@ -49,6 +49,7 @@ add_executable( all_tests all_tests.cpp
                           crypto/dh_test.cpp
                           crypto/rand_test.cpp
                           crypto/sha_tests.cpp
+                          io/tcp_test.cpp
                           network/http/websocket_test.cpp
                           thread/task_cancel.cpp
                           thread/thread_tests.cpp

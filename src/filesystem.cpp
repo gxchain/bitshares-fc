@@ -27,19 +27,15 @@
 
 namespace fc {
   // when converting to and from a variant, store utf-8 in the variant
-  void to_variant( const fc::path& path_to_convert, variant& variant_output ) 
+  void to_variant( const fc::path& path_to_convert, variant& variant_output, uint32_t max_depth )
   {
     std::wstring wide_string = path_to_convert.generic_wstring();
     std::string utf8_string;
     fc::encodeUtf8(wide_string, &utf8_string);
     variant_output = utf8_string;
-
-    //std::string path = t.to_native_ansi_path();
-    //std::replace(path.begin(), path.end(), '\\', '/');
-    //v = path;
   }
 
-  void from_variant( const fc::variant& variant_to_convert, fc::path& path_output ) 
+  void from_variant( const fc::variant& variant_to_convert, fc::path& path_output, uint32_t max_depth )
   {
     std::wstring wide_string;
     fc::decodeUtf8(variant_to_convert.as_string(), &wide_string);
@@ -247,9 +243,14 @@ namespace fc {
      try {
          boost::system::error_code ec;
          boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t), ec );
+         if( ec )
+         {
+            FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${code} : ${message}",
+                      ("srcfile",f)("dstfile",t)("code",ec.value())("message",ec.message()) );
+         }
      } catch ( boost::system::system_error& e ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
-	         ("srcfile",f)("dstfile",t)("reason",e.what() ) );
+	         ("srcfile",f)("dstfile",t)("reason",std::string(e.what()) ) );
      } catch ( ... ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed",
 	         ("srcfile",f)("dstfile",t)("inner", fc::except_str() ) );
@@ -263,7 +264,7 @@ namespace fc {
     catch ( boost::system::system_error& e )
     {
       FC_THROW( "Resize file '${f}' to size ${s} failed: ${reason}",
-                ("f",f)("s",t)( "reason", e.what() ) );
+                ("f",f)("s",t)( "reason", std::string(e.what()) ) );
     } 
     catch ( ... ) 
     {
@@ -302,13 +303,14 @@ namespace fc {
   void rename( const path& f, const path& t ) { 
      try {
   	    boost::filesystem::rename( boost::filesystem::path(f), boost::filesystem::path(t) ); 
-     } catch ( boost::system::system_error& ) {
-         try{
-             boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t) ); 
-             boost::filesystem::remove( boost::filesystem::path(f)); 
-         } catch ( boost::system::system_error& e ) {
-             FC_THROW( "Rename from ${srcfile} to ${dstfile} failed because ${reason}",
-                     ("srcfile",f)("dstfile",t)("reason",e.what() ) );
+     } catch ( boost::system::system_error& er ) {
+         try {
+            copy( f, t );
+            remove( f );
+         } catch ( fc::exception& e ) {
+             FC_RETHROW_EXCEPTION( e, error,
+                   "Rename from ${srcfile} to ${dstfile} failed due to ${reason}, trying to copy then remove",
+                   ("srcfile",f)("dstfile",t)("reason",std::string(er.what())) );
          }
      } catch ( ... ) {
      	FC_THROW( "Rename from ${srcfile} to ${dstfile} failed",
@@ -369,7 +371,7 @@ namespace fc {
       }
       if (create)
       {
-         fc::ofstream ofs(*_path, fc::ofstream::out | fc::ofstream::binary);
+         fc::ofstream ofs(*_path, std::ios_base::out | std::ios_base::binary);
          ofs.close();
       }
    }

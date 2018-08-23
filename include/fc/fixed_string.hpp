@@ -98,16 +98,18 @@ namespace fc {
   namespace raw
   {
     template<typename Stream, typename Storage>
-    inline void pack( Stream& s, const fc::fixed_string<Storage>& u ) {
+    inline void pack( Stream& s, const fc::fixed_string<Storage>& u, uint32_t _max_depth=FC_PACK_MAX_DEPTH ) {
+       FC_ASSERT( _max_depth > 0 );
        unsigned_int size = u.size();
-       pack( s, size );
+       pack( s, size, _max_depth - 1 );
        s.write( (const char*)&u.data, size );
     }
 
     template<typename Stream, typename Storage>
-    inline void unpack( Stream& s, fc::fixed_string<Storage>& u ) {
+    inline void unpack( Stream& s, fc::fixed_string<Storage>& u, uint32_t _max_depth=FC_PACK_MAX_DEPTH ) {
+       FC_ASSERT( _max_depth > 0 );
        unsigned_int size;
-       fc::raw::unpack( s, size );
+       fc::raw::unpack( s, size, _max_depth - 1 );
        if( size.value > 0 ) {
           if( size.value > sizeof(Storage) ) {
              s.read( (char*)&u.data, sizeof(Storage) );
@@ -119,43 +121,23 @@ namespace fc {
                 left -= 1024;
              }
              s.read( buf, left );
-
-             /*
-             s.seekp( s.tellp() + (size.value - sizeof(Storage)) );
-             char tmp;
-             size.value -= sizeof(storage);
-             while( size.value ){ s.read( &tmp, 1 ); --size.value; }
-             */
-           //  s.skip( size.value - sizeof(Storage) );
           } else {
              s.read( (char*)&u.data, size.value );
           }
        }
     }
-
-    /*
-    template<typename Stream, typename... Args>
-    inline void pack( Stream& s, const boost::multiprecision::number<Args...>& d ) {
-       s.write( (const char*)&d, sizeof(d) );
-    }
-
-    template<typename Stream, typename... Args>
-    inline void unpack( Stream& s, boost::multiprecision::number<Args...>& u ) {
-       s.read( (const char*)&u, sizeof(u) );
-    }
-    */
   }
 }
 
 #include <fc/variant.hpp>
 namespace fc {
    template<typename Storage>
-   void to_variant( const fixed_string<Storage>& s, variant& v ) {
+   void to_variant( const fixed_string<Storage>& s, variant& v, uint32_t max_depth = 1 ) {
       v = std::string(s);
    }
 
    template<typename Storage>
-   void from_variant( const variant& v, fixed_string<Storage>& s ) {
+   void from_variant( const variant& v, fixed_string<Storage>& s, uint32_t max_depth = 1 ) {
       s = v.as_string();
    }
 }

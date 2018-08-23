@@ -13,7 +13,7 @@ namespace fc
     template <typename T>
     static void divide(const T &numerator, const T &denominator, T &quotient, T &remainder) 
     {
-      static const int bits = sizeof(T) * 8;//CHAR_BIT;
+      static const int bits = sizeof(T) * 8;
 
       if(denominator == 0) {
         throw std::domain_error("divide by zero");
@@ -228,22 +228,6 @@ namespace fc
         self /= other;
         hi = static_cast<uint64_t>(self >> 64);
         lo = static_cast<uint64_t>((self << 64 ) >> 64);
-
-        /*
-        uint128 remainder;
-        divide(*this, b, *this, remainder ); //, *this);
-        if( tmp.hi != hi || tmp.lo != lo ) {
-           std::cerr << tmp.hi << "  " << hi <<"\n";
-           std::cerr << tmp.lo << "  " << lo << "\n";
-           exit(1);
-        }
-        */
-       
-        /*
-        const auto&  b128 = std::reinterpret_cast<const m128&>(b);
-        auto&     this128 = std::reinterpret_cast<m128&>(*this);
-        this128 /= b128;
-        */
         return *this;
     }
 
@@ -344,8 +328,6 @@ namespace fc
        
        result_hi = uint128( y[3], y[2] );
        result_lo = uint128( y[1], y[0] );
-       
-       return;
    }
 
    static uint8_t _popcount_64( uint64_t x )
@@ -374,8 +356,14 @@ namespace fc
       return _popcount_64( lo ) + _popcount_64( hi );
    }
 
-   void to_variant( const uint128& var,  variant& vo )  { vo = std::string(var);         }
-   void from_variant( const variant& var,  uint128& vo ){ vo = uint128(var.as_string()); }
+   void to_variant( const uint128& var,  variant& vo, uint32_t max_depth )
+   {
+      vo = std::string(var);
+   }
+   void from_variant( const variant& var, uint128& vo, uint32_t max_depth )
+   {
+      vo = uint128(var.as_string());
+   }
 
 } // namespace fc
 

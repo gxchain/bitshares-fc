@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string>
 
+#include <fc/config.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/city.hpp>
 
@@ -32,16 +33,9 @@ namespace fc
       uint128( uint64_t _h, uint64_t _l )
       :hi(_h),lo(_l){}
       uint128( const fc::bigint& bi );
-      explicit uint128( unsigned __int128 i ):hi( i >> 64 ), lo(i){ }
 
       operator std::string()const;
       operator fc::bigint()const;
-
-      explicit operator unsigned __int128()const {
-         unsigned __int128 result(hi);
-         result <<= 64;
-         return result | lo;
-      }
 
       bool     operator == ( const uint128& o )const{ return hi == o.hi && lo == o.lo;             }
       bool     operator != ( const uint128& o )const{ return hi != o.hi || lo != o.lo;             }
@@ -127,17 +121,15 @@ namespace fc
 
   class variant;
 
-  void to_variant( const uint128& var,  variant& vo );
-  void from_variant( const variant& var,  uint128& vo );
-//  void to_variant( const unsigned __int128& var,  variant& vo );
-//  void from_variant( const variant& var,  unsigned __int128& vo );
+  void to_variant( const uint128& var,  variant& vo, uint32_t max_depth = 1 );
+  void from_variant( const variant& var,  uint128& vo, uint32_t max_depth = 1 );
 
   namespace raw
   {
     template<typename Stream>
-    inline void pack( Stream& s, const uint128& u ) { s.write( (char*)&u, sizeof(u) ); }
+    inline void pack( Stream& s, const uint128& u, uint32_t _max_depth=FC_PACK_MAX_DEPTH ) { s.write( (char*)&u, sizeof(u) ); }
     template<typename Stream>
-    inline void unpack( Stream& s, uint128& u ) { s.read( (char*)&u, sizeof(u) ); }
+    inline void unpack( Stream& s, uint128& u, uint32_t _max_depth=FC_PACK_MAX_DEPTH ) { s.read( (char*)&u, sizeof(u) ); }
   }
 
   size_t city_hash_size_t(const char *buf, size_t len);

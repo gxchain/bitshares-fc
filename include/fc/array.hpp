@@ -102,14 +102,14 @@ namespace fc {
   { return 0 != memcmp( a.data, b.data, N*sizeof(T) ); }
 
   template<typename T, size_t N>
-  void to_variant( const array<T,N>& bi, variant& v )
+  void to_variant( const array<T,N>& bi, variant& v, uint32_t max_depth = 1 )
   {
-     v = std::vector<char>( (const char*)&bi, ((const char*)&bi) + sizeof(bi) );
+     to_variant( std::vector<char>( (const char*)&bi, ((const char*)&bi) + sizeof(bi) ), v, 1 );
   }
   template<typename T, size_t N>
-  void from_variant( const variant& v, array<T,N>& bi )
+  void from_variant( const variant& v, array<T,N>& bi, uint32_t max_depth = 1 )
   {
-    std::vector<char> ve = v.as< std::vector<char> >();
+    std::vector<char> ve = v.as< std::vector<char> >( 1 );
     if( ve.size() )
     {
         memcpy(&bi, ve.data(), fc::min<size_t>(ve.size(),sizeof(bi)) );

@@ -66,8 +66,8 @@ class sha1
 };
 
   class variant;
-  void to_variant( const sha1& bi, variant& v );
-  void from_variant( const variant& v, sha1& bi );
+  void to_variant( const sha1& bi, variant& v, uint32_t max_depth );
+  void from_variant( const variant& v, sha1& bi, uint32_t max_depth );
 
 } // namespace fc
 

@@ -7,7 +7,8 @@ http_api_connection::~http_api_connection()
 {
 }
 
-http_api_connection::http_api_connection()
+http_api_connection::http_api_connection(uint32_t max_depth)
+:api_connection(max_depth)
 {
    _rpc_state.add_method( "call", [this]( const variants& args ) -> variant
    {
@@ -88,25 +89,27 @@ void http_api_connection::on_request( const fc::http::request& req, const fc::ht
    {
       resp.add_header( "Content-Type", "application/json" );
       std::string req_body( req.body.begin(), req.body.end() );
-      auto var = fc::json::from_string( req_body );
+      auto var = fc::json::from_string( req_body, fc::json::legacy_parser, _max_conversion_depth );
       const auto& var_obj = var.get_object();
 
       if( var_obj.contains( "method" ) )
       {
-         auto call = var.as<fc::rpc::request>();
+         auto call = var.as<fc::rpc::request>(_max_conversion_depth);
          try
          {
             try
             {
-               auto result = _rpc_state.local_call( call.method, call.params );
-               resp_body = fc::json::to_string( fc::rpc::response( *call.id, result ) );
+               fc::variant result( _rpc_state.local_call( call.method, call.params ), _max_conversion_depth );
+               resp_body = fc::json::to_string( fc::variant( fc::rpc::response( *call.id, result ), _max_conversion_depth),
+                                                fc::json::stringify_large_ints_and_doubles, _max_conversion_depth );
                resp_status = http::reply::OK;
             }
             FC_CAPTURE_AND_RETHROW( (call.method)(call.params) );
          }
          catch ( const fc::exception& e )
          {
-            resp_body = fc::json::to_string( fc::rpc::response( *call.id, error_object{ 1, e.to_detail_string(), fc::variant(e)} ) );
+            resp_body = fc::json::to_string( fc::variant( fc::rpc::response( *call.id, error_object{ 1, e.to_detail_string(), fc::variant(e, _max_conversion_depth)} ), _max_conversion_depth),
+                                             fc::json::stringify_large_ints_and_doubles, _max_conversion_depth );
             resp_status = http::reply::InternalServerError;
          }
       }

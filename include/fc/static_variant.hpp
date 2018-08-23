@@ -13,7 +13,6 @@
 #include <stdexcept>
 #include <typeinfo>
 #include <fc/exception/exception.hpp>
-#include <boost/core/typeinfo.hpp>
 
 namespace fc {
 
@@ -25,9 +24,6 @@ struct storage_ops;
 
 template<typename X, typename... Ts>
 struct position;
-
-template<int Pos, typename... Ts>
-struct type_at;
 
 template<typename... Ts>
 struct type_info;
@@ -155,16 +151,6 @@ struct position<X, T, Ts...> {
 };
 
 template<typename T, typename... Ts>
-struct type_at<0, T, Ts...> {
-   using type = T;
-};
-
-template<int Pos, typename T, typename... Ts>
-struct type_at<Pos, T, Ts...> {
-   using type = typename type_at<Pos - 1, Ts...>::type;
-};
-
-template<typename T, typename... Ts>
 struct type_info<T&, Ts...> {
     static const bool no_reference_types = false;
     static const bool no_duplicates = position<T, Ts...>::pos == -1 && type_info<Ts...>::no_duplicates;
@@ -195,8 +181,9 @@ class static_variant {
     static_assert(impl::type_info<Types...>::no_reference_types, "Reference types are not permitted in static_variant.");
     static_assert(impl::type_info<Types...>::no_duplicates, "static_variant type arguments contain duplicate types.");
 
-    alignas(Types...) char storage[impl::type_info<Types...>::size];
-    int _tag;
+    using tag_type = int64_t;
+    tag_type _tag;
+    char storage[impl::type_info<Types...>::size];
 
     template<typename X>
     void init(const X& x) {
@@ -339,76 +326,102 @@ public:
         return impl::storage_ops<0, Types...>::apply(_tag, storage, v);
     }
 
-    static uint32_t count() { return impl::type_info<Types...>::count; }
-    void set_which( uint32_t w ) {
-      FC_ASSERT( w < count()  );
+    static int count() { return impl::type_info<Types...>::count; }
+    void set_which( tag_type w ) {
+      FC_ASSERT( w >= 0 );
+      FC_ASSERT( w < count() );
       this->~static_variant();
-      try {
-         _tag = w;
-         impl::storage_ops<0, Types...>::con(_tag, storage);
-      } catch ( ... ) { 
-         _tag = 0;
-         impl::storage_ops<0, Types...>::con(_tag, storage);
-      } 
+      _tag = w;
+      impl::storage_ops<0, Types...>::con(_tag, storage);
     }
 
-    int which() const {return _tag;}
-
-    template<typename X>
-    bool contains() const { return which() == tag<X>::value; }
-
-    template<typename X>
-    static constexpr int position() { return impl::position<X, Types...>::pos; }
-
-    template<int Pos, std::enable_if_t<Pos < impl::type_info<Types...>::size,int> = 1>
-    using type_at = typename impl::type_at<Pos, Types...>::type;
-};
-
-template<typename Result>
-struct visitor {
-    typedef Result result_type;
+    tag_type which() const {return _tag;}
 };
 
    struct from_static_variant 
    {
       variant& var;
-      from_static_variant( variant& dv ):var(dv){}
+      const uint32_t _max_depth;
+      from_static_variant( variant& dv, uint32_t max_depth ):var(dv),_max_depth(max_depth){}
 
       typedef void result_type;
       template<typename T> void operator()( const T& v )const
       {
-         to_variant( v, var );
+         to_variant( v, var, _max_depth );
       }
    };
 
    struct to_static_variant
    {
       const variant& var;
-      to_static_variant( const variant& dv ):var(dv){}
+      const uint32_t _max_depth;
+      to_static_variant( const variant& dv, uint32_t max_depth ):var(dv),_max_depth(max_depth){}
 
       typedef void result_type;
       template<typename T> void operator()( T& v )const
       {
-         from_variant( var, v ); 
+         from_variant( var, v, _max_depth );
       }
    };
 
 
-   template<typename... T> void to_variant( const fc::static_variant<T...>& s, fc::variant& v )
+   template<typename... T> void to_variant( const fc::static_variant<T...>& s, fc::variant& v, uint32_t max_depth )
    {
-      variant tmp;
+      FC_ASSERT( max_depth > 0 );
       variants vars(2);
       vars[0] = s.which();
-      s.visit( from_static_variant(vars[1]) );
+      s.visit( from_static_variant(vars[1], max_depth - 1) );
       v = std::move(vars);
    }
-   template<typename... T> void from_variant( const fc::variant& v, fc::static_variant<T...>& s )
+   template<typename... T> void from_variant( const fc::variant& v, fc::static_variant<T...>& s, uint32_t max_depth )
    {
+      FC_ASSERT( max_depth > 0 );
       auto ar = v.get_array();
       if( ar.size() < 2 ) return;
       s.set_which( ar[0].as_uint64() );
-      s.visit( to_static_variant(ar[1]) );
+      s.visit( to_static_variant(ar[1], max_depth - 1) );
    }
 
-  template<typename... T> struct get_typename { static const char* name()   { return BOOST_CORE_TYPEID(static_variant<T...>).name();   } };
+   template< typename... T > struct get_comma_separated_typenames;
+
+   template<>
+   struct get_comma_separated_typenames<>
+   {
+      static const char* names() { return ""; }
+   };
+
+   template< typename T >
+   struct get_comma_separated_typenames<T>
+   {
+      static const char* names()
+      {
+         static const std::string n = get_typename<T>::name();
+         return n.c_str();
+      }
+   };
+
+   template< typename T, typename... Ts >
+   struct get_comma_separated_typenames<T, Ts...>
+   {
+      static const char* names()
+      {
+         static const std::string n =
+            std::string( get_typename<T>::name() )+","+
+            std::string( get_comma_separated_typenames< Ts... >::names() );
+         return n.c_str();
+      }
+   };
+
+   template< typename... T >
+   struct get_typename< static_variant< T... > >
+   {
+      static const char* name()
+      {
+         static const std::string n = std::string( "fc::static_variant<" )
+            + get_comma_separated_typenames<T...>::names()
+            + ">";
+         return n.c_str();
+      }
+   };
+
 } // namespace fc

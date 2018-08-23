@@ -16,6 +16,7 @@ namespace fc { namespace rpc {
    class cli : public api_connection
    {
       public:
+         cli( uint32_t max_depth ) : api_connection(max_depth) {}
          ~cli();
 
          virtual variant send_call( api_id_type api_id, string method_name, variants args = variants() );

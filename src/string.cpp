@@ -2,6 +2,8 @@
 #include <fc/utility.hpp>
 #include <fc/fwd_impl.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/io/json.hpp>
+#include <fc/io/sstream.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -256,6 +258,60 @@ namespace fc  {
      }
   }
 
+   string format_string( const string& format, const variant_object& args, uint32_t max_object_depth )
+   {
+      stringstream ss;
+      size_t prev = 0;
+      auto next = format.find( '$' );
+      while( prev < format.size() )
+      {
+         ss << format.substr( prev, next == string::npos ? string::npos : next - prev );
+
+         // if we got to the end, return it.
+         if( next == size_t(string::npos) || next == format.size() )
+            return ss.str();
+
+         // if we are not at the end, then update the start
+         prev = next + 1;
+
+         if( format[prev] == '{' )
+         {
+            // if the next char is a open, then find close
+            next = format.find( '}', prev );
+            // if we found close...
+            if( next != string::npos )
+            {
+               // the key is between prev and next
+               string key = format.substr( prev+1, (next-prev-1) );
+
+               auto val = args.find( key );
+               if( val != args.end() )
+               {
+                  if( val->value().is_object() || val->value().is_array() )
+                  {
+                     try
+                     {
+                        ss << json::to_string( val->value(), json::stringify_large_ints_and_doubles, max_object_depth );
+                     }
+                     catch( const fc::assert_exception& e )
+                     {
+                        ss << "[\"ERROR_WHILE_CONVERTING_VALUE_TO_STRING\"]";
+                     }
+                  }
+                  else
+                     ss << val->value().as_string();
+               }
+               else
+                  ss << "${"<<key<<"}";
+               prev = next + 1;
+            }
+         }
+         else
+            ss << format[next];
+         next = format.find( '$', prev );
+      }
+      return ss.str();
+   }
 
 } // namespace fc
 

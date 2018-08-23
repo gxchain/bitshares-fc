@@ -51,34 +51,6 @@ namespace fc {
   template<typename T>
   const T& min( const T& a, const T& b ) { return a < b ? a: b; }
 
-  constexpr size_t const_strlen(const char* str) {
-     int i = 0;
-     while(*(str+i) != '\0')
-        i++;
-     return i; 
-  }
-
-
-  template<typename T>
-  void move_append(std::vector<T> &dest, std::vector<T>&& src ) {
-    if (src.empty()) {
-      return;
-    } else if (dest.empty()) {
-      dest = std::move(src);
-    } else {
-      dest.insert(std::end(dest), std::make_move_iterator(std::begin(src)), std::make_move_iterator(std::end(src)));
-    }
-  }
-
-  template<typename T>
-  void copy_append(std::vector<T> &dest, const std::vector<T>& src ) {
-    if (src.empty()) {
-      return;
-    } else {
-      dest.insert(std::end(dest), std::begin(src), std::end(src));
-    }
-  }
-
   template<typename T>
   void deduplicate( std::vector<T>& entries ) {
     if (entries.size() > 1) {

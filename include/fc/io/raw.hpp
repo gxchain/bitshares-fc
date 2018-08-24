@@ -691,7 +691,6 @@ namespace fc {
        FC_ASSERT( _max_depth > 0 );
        datastream<const char*>  ds( d, s );
        fc::raw::unpack( ds, v, _max_depth - 1 );
-       return v;
     } FC_RETHROW_EXCEPTIONS( warn, "error unpacking ${type}", ("type",fc::get_typename<T>::name() ) ) }
 
    template<typename Stream>

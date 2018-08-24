@@ -78,6 +78,10 @@ namespace fc
    void to_variant( const UInt<64>& n, variant& v, uint32_t max_depth );
    void from_variant( const variant& v, UInt<64>& n, uint32_t max_depth );
 
+   template<typename T> void to_variant( const boost::multiprecision::number<T>& n, variant& v, uint32_t max_depth );
+   template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n, uint32_t max_depth );
+
+
    template<typename T, typename... Args> void to_variant( const boost::multi_index_container<T,Args...>& s, variant& v, uint32_t max_depth );
    template<typename T, typename... Args> void from_variant( const variant& v, boost::multi_index_container<T,Args...>& s, uint32_t max_depth );
 
@@ -106,7 +110,12 @@ namespace fc
    void from_variant( const variant& var, uint32_t& vo, uint32_t max_depth = 1 );
    void to_variant( const int32_t& var,   variant& vo,  uint32_t max_depth = 1 );
    /** @ingroup Serializable */
-   void from_variant( const variant& var, int32_t& vo,  uint32_t max_depth = 1 );
+   void from_variant( const variant& var, int32_t& vo, uint32_t max_depth = 1 );
+
+   void to_variant( const unsigned __int128& var,  variant& vo, uint32_t max_depth = 1 );
+   void from_variant( const variant& var,  unsigned __int128& vo, uint32_t max_depth = 1 );
+   void to_variant( const __int128& var,  variant& vo, uint32_t max_depth = 1 );
+   void from_variant( const variant& var,  __int128& vo, uint32_t max_depth = 1 );
 
    void to_variant( const uint64_t& var,  variant& vo,  uint32_t max_depth = 1 );
    void to_variant( const int64_t& var,   variant& vo,  uint32_t max_depth = 1 );

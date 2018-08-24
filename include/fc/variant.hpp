@@ -17,6 +17,8 @@
 #include <fc/smart_ref_fwd.hpp>
 #include <boost/multi_index_container_fwd.hpp>
 
+#include <boost/multiprecision/cpp_int.hpp>
+
 #ifdef FC_ASSERT
 #define _FC_ASSERT(...) FC_ASSERT( __VA_ARGS__ )
 #else
@@ -58,6 +60,23 @@ namespace fc
    void to_variant( const blob& var, variant& vo, uint32_t max_depth = 1);
    void from_variant( const variant& var, blob& vo, uint32_t max_depth = 1 );
 
+   using namespace boost::multiprecision;
+   template<size_t Size>
+   using UInt = number<cpp_int_backend<Size, Size, unsigned_magnitude, unchecked, void> >;
+   template<size_t Size>
+   using Int = number<cpp_int_backend<Size, Size, signed_magnitude, unchecked, void> >;
+
+   void to_variant( const UInt<8>& n, variant& v, uint32_t max_depth );
+   void from_variant( const variant& v, UInt<8>& n, uint32_t max_depth );
+
+   void to_variant( const UInt<16>& n, variant& v, uint32_t max_depth );
+   void from_variant( const variant& v, UInt<16>& n, uint32_t max_depth );
+
+   void to_variant( const UInt<32>& n, variant& v, uint32_t max_depth );
+   void from_variant( const variant& v, UInt<32>& n, uint32_t max_depth );
+
+   void to_variant( const UInt<64>& n, variant& v, uint32_t max_depth );
+   void from_variant( const variant& v, UInt<64>& n, uint32_t max_depth );
 
    template<typename T, typename... Args> void to_variant( const boost::multi_index_container<T,Args...>& s, variant& v, uint32_t max_depth );
    template<typename T, typename... Args> void from_variant( const variant& v, boost::multi_index_container<T,Args...>& s, uint32_t max_depth );
@@ -657,11 +676,11 @@ namespace fc
    variant operator - ( const variant& a, const variant& b );
    variant operator * ( const variant& a, const variant& b );
    variant operator / ( const variant& a, const variant& b );
-   variant operator == ( const variant& a, const variant& b );
-   variant operator != ( const variant& a, const variant& b );
-   variant operator < ( const variant& a, const variant& b );
-   variant operator > ( const variant& a, const variant& b );
-   variant operator ! ( const variant& a );
+   bool    operator == ( const variant& a, const variant& b );
+   bool    operator != ( const variant& a, const variant& b );
+   bool    operator < ( const variant& a, const variant& b );
+   bool    operator > ( const variant& a, const variant& b );
+   bool    operator ! ( const variant& a );
 } // namespace fc
 
 #include <fc/reflect/reflect.hpp>

@@ -631,7 +631,7 @@ namespace fc
               to_stream(os, v.get_object(), format, max_depth - 1 );
               return;
          default:
-            FC_THROW_EXCEPTION( fc::invalid_arg_exception, "Unsupported variant type: " + v.get_type() );
+            FC_THROW_EXCEPTION( fc::invalid_arg_exception, "Unsupported variant type: ${t}", ("t", v.get_type()) );
       }
    }
 

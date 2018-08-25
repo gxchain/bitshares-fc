@@ -681,6 +681,13 @@ namespace fc
          c.insert( item.as<T>( max_depth - 1 ) );
    }
 
+   template<typename T> void to_variant( const boost::multiprecision::number<T>& n, variant& v, uint32_t max_depth ) {
+       v = std::string(n);
+   }
+   template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n, uint32_t max_depth ) {
+       n = boost::multiprecision::number<T>(v.get_string());
+   }
+
    variant operator + ( const variant& a, const variant& b );
    variant operator - ( const variant& a, const variant& b );
    variant operator * ( const variant& a, const variant& b );

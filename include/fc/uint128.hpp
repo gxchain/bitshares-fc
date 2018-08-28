@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string>
 
+#include <fc/config.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/city.hpp>
 

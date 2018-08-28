@@ -130,7 +130,6 @@ template<typename Visitor>\
 static inline void visit( const Visitor& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
-    verify( v ); \
 }
 
 #define FC_REFLECT_DERIVED_IMPL_EXT( TYPE, INHERITS, MEMBERS ) \
@@ -238,16 +237,6 @@ template<> struct reflector<TYPE> {\
     typedef TYPE type; \
     typedef fc::true_type  is_defined; \
     typedef fc::false_type is_enum; \
-    template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, int) -> decltype(v.reflector_verify(), void()) { \
-       v.reflector_verify(); \
-    } \
-    template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, long) -> decltype(v, void()) {} \
-    template<typename Visitor> \
-    static auto verify(const Visitor& v) -> decltype(verify_imp(v, 0), void()) { \
-       verify_imp(v, 0); \
-    } \
     enum  member_count_enum {  \
       local_member_count = 0  BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_MEMBER_COUNT, +, MEMBERS ),\
       total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\
@@ -261,16 +250,6 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
     typedef TYPE type; \
     typedef fc::true_type  is_defined; \
     typedef fc::false_type is_enum; \
-    template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, int) -> decltype(v.reflector_verify(), void()) { \
-       v.reflector_verify(); \
-    } \
-    template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, long) -> decltype(v, void()) {} \
-    template<typename Visitor> \
-    static auto verify(const Visitor& v) -> decltype(verify_imp(v, 0), void()) { \
-       verify_imp(v, 0); \
-    } \
     enum  member_count_enum {  \
       local_member_count = 0  BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_MEMBER_COUNT, +, MEMBERS ),\
       total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\

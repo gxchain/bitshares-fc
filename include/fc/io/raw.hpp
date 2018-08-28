@@ -12,29 +12,12 @@
 #include <fc/exception/exception.hpp>
 #include <fc/safe.hpp>
 #include <fc/io/raw_fwd.hpp>
+#include <algorithm>
 #include <map>
 #include <deque>
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/interprocess/containers/string.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/managed_mapped_file.hpp>
-#include <fc/crypto/hex.hpp>
-
 namespace fc {
     namespace raw {
-
-    using namespace boost::multiprecision;
-    template<size_t Size>
-    using UInt = number<cpp_int_backend<Size, Size, unsigned_magnitude, unchecked, void> >;
-    template<size_t Size>
-    using Int = number<cpp_int_backend<Size, Size, signed_magnitude, unchecked, void> >;
-    template<typename Stream> void pack( Stream& s, const UInt<256>& n );
-    template<typename Stream> void unpack( Stream& s,  UInt<256>& n );
-    template<typename Stream> void pack( Stream& s, const Int<256>& n );
-    template<typename Stream> void unpack( Stream& s,  Int<256>& n );
-    template<typename Stream, typename T> void pack( Stream& s, const boost::multiprecision::number<T>& n );
-    template<typename Stream, typename T> void unpack( Stream& s,  boost::multiprecision::number<T>& n );
 
     template<typename Stream, typename Arg0, typename... Args>
     inline void pack( Stream& s, const Arg0& a0, Args... args, uint32_t _max_depth ) {
@@ -762,28 +745,6 @@ namespace fc {
        fc::raw::unpack( s, w, _max_depth );
        sv.set_which(w.value);
        sv.visit( unpack_static_variant<Stream>( s, _max_depth ) );
-    }
-
-    template<typename Stream, typename T> void pack( Stream& s, const boost::multiprecision::number<T>& n ) {
-      static_assert( sizeof( n ) == (std::numeric_limits<boost::multiprecision::number<T>>::digits+1)/8, "unexpected padding" );
-      s.write( (const char*)&n, sizeof(n) );
-    }
-    template<typename Stream, typename T> void unpack( Stream& s,  boost::multiprecision::number<T>& n ) {
-      static_assert( sizeof( n ) == (std::numeric_limits<boost::multiprecision::number<T>>::digits+1)/8, "unexpected padding" );
-      s.read( (char*)&n, sizeof(n) );
-    }
-
-    template<typename Stream> void pack( Stream& s, const UInt<256>& n ) {
-       pack( s, static_cast<UInt<128>>(n) );
-       pack( s, static_cast<UInt<128>>(n >> 128) );
-    }
-    template<typename Stream> void unpack( Stream& s,  UInt<256>& n ) {
-       UInt<128> tmp[2];
-       unpack( s, tmp[0] );
-       unpack( s, tmp[1] );
-       n = tmp[1];
-       n <<= 128;
-       n |= tmp[0];
     }
 
 } } // namespace fc::raw

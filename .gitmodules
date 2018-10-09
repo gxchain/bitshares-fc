@@ -7,3 +7,6 @@
 [submodule "vendor/websocketpp"]
 	path = vendor/websocketpp
 	url = https://github.com/gxchain/websocketpp.git
+[submodule "vendor/editline"]
+	path = vendor/editline
+	url = https://github.com/troglobit/editline.git

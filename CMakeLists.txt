@@ -102,6 +102,50 @@ else ( MSVC )
 endif ( MSVC )
 # End configure secp256k1-zkp
 
+# Configure editline
+if ( MSVC )
+    # autoconf won't work here, hard code the defines
+    set( EDITLINE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline" )
+     file( GLOB EDITLINE_SOURCES "${EDITLINE_DIR}/src/editline.c" )
+    add_library( editline ${EDITLINE_SOURCES} )
+     target_include_directories( editline PRIVATE "${EDITLINE_DIR}" PUBLIC "${EDITLINE_DIR}/include" )
+     set_target_properties( editline PROPERTIES COMPILE_DEFINITIONS LINKER_LANGUAGE C )
+else ( MSVC )
+    include(ExternalProject)
+    if ( MINGW )
+    ExternalProject_Add( project_editline
+     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/vendor/editline
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline
+     CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/vendor/editline --host=x86_64-w64-mingw32
+     BUILD_COMMAND make
+     INSTALL_COMMAND true
+     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/vendor/editline/src/project_editline-build/.libs/libeditline.a
+    )
+    else ( MINGW )
+    ExternalProject_Add( project_editline
+     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/vendor/editline
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline
+     CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/vendor/editline
+     BUILD_COMMAND make
+     INSTALL_COMMAND true
+     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/vendor/editline/src/project_editline-build/.libs/libeditline.a
+    )
+    endif ( MINGW )
+    ExternalProject_Add_Step(project_editline autogen
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline
+     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline/autogen.sh
+     DEPENDERS configure
+    )
+     ExternalProject_Get_Property(project_editline binary_dir)
+     add_library(editline STATIC IMPORTED)
+    set_property(TARGET editline PROPERTY IMPORTED_LOCATION ${binary_dir}/src/.libs/libeditline${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set_property(TARGET editline PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/editline/include)
+    add_dependencies(editline project_editline)
+    install( FILES ${binary_dir}/src/.libs/libeditline${CMAKE_STATIC_LIBRARY_SUFFIX} DESTINATION lib/cryptonomex )
+endif ( MSVC )
+# End configure editline
+
+
 IF( WIN32 )
   MESSAGE(STATUS "Configuring fc to build on Win32")
 
@@ -249,27 +293,12 @@ add_subdirectory( vendor/websocketpp EXCLUDE_FROM_ALL )
 setup_library( fc SOURCES ${sources} LIBRARY_TYPE STATIC )
 install( DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION include )
 
-# begin readline stuff
-find_package(Curses)
-find_package(Readline)
-
-file(GLOB HEADERS "include/bts/cli/*.hpp")
-
-if (READLINE_FOUND)
-  target_compile_definitions (fc PRIVATE HAVE_READLINE)
-  set(readline_libraries ${Readline_LIBRARY})
-  if (CURSES_FOUND)
-    list(APPEND readline_libraries ${CURSES_LIBRARY})
-  endif()
-  set(readline_includes ${Readline_INCLUDE_DIR})
-endif()
-if(WIN32)
-  target_compile_definitions( fc PRIVATE _CRT_NONSTDC_NO_DEPRECATE )
-endif(WIN32)
-# end readline stuff
+# begin editline stuff
+target_compile_definitions (fc PRIVATE HAVE_EDITLINE)
+set(editline_libraries editline)
 
 if( NOT CPP_STANDARD )
-  set( CPP_STANDARD, "-std=c++11" )
+  set( CPP_STANDARD "-std=c++11" )
 endif()
 
 IF(WIN32)
@@ -351,7 +380,6 @@ target_include_directories(fc
     ${OPENSSL_INCLUDE_DIR}
     "vendor/diff-match-patch-cpp-stl"
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
-    "${readline_includes}"
 
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/secp256k1-zkp

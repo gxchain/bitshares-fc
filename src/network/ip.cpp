@@ -3,6 +3,7 @@
 #include <fc/exception/exception.hpp>
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <string>
 
 namespace fc { namespace ip {
@@ -75,6 +76,9 @@ namespace fc { namespace ip {
   {
     try
     {
+      string es = endpoint_string;
+      boost::algorithm::trim_if(es, boost::is_any_of("\""));
+
       endpoint ep;
       auto pos = endpoint_string.find(':');
       ep._ip   = boost::asio::ip::address_v4::from_string(endpoint_string.substr( 0, pos ) ).to_ulong();

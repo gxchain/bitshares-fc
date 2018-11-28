@@ -77,7 +77,7 @@ namespace fc { namespace ip {
     try
     {
       string es = endpoint_string;
-      boost::algorithm::trim_if(es, boost::is_any_of("\""));
+      boost::algorithm::trim_if(es, boost::is_any_of(" \""));
 
       endpoint ep;
       auto pos = endpoint_string.find(':');

@@ -43,7 +43,7 @@ namespace fc
                fc::string                         format;
                console_appender::stream::type     stream;
                std::vector<level_color>           level_colors;
-               uint32_t                           max_object_depth;
+               uint32_t                           max_object_depth = FC_MAX_LOG_OBJECT_DEPTH;
                bool                               flush;
             };
 
